@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludo Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="game-container">
+
+    <h1>Ludo Game</h1>
+
+    <div class="status">
+        <h2 id="turn">Player 1's Turn</h2>
+    </div>
+
+    <div class="board">
+
+        <!-- Red Home -->
+        <div class="home red">
+            <div class="token red-token" id="red1"></div>
+            <div class="token red-token" id="red2"></div>
+            <div class="token red-token" id="red3"></div>
+            <div class="token red-token" id="red4"></div>
+        </div>
+
+        <!-- Green Home -->
+        <div class="home green">
+            <div class="token green-token" id="green1"></div>
+            <div class="token green-token" id="green2"></div>
+            <div class="token green-token" id="green3"></div>
+            <div class="token green-token" id="green4"></div>
+        </div>
+
+        <!-- Blue Home -->
+        <div class="home blue">
+            <div class="token blue-token" id="blue1"></div>
+            <div class="token blue-token" id="blue2"></div>
+            <div class="token blue-token" id="blue3"></div>
+            <div class="token blue-token" id="blue4"></div>
+        </div>
+
+        <!-- Yellow Home -->
+        <div class="home yellow">
+            <div class="token yellow-token" id="yellow1"></div>
+            <div class="token yellow-token" id="yellow2"></div>
+            <div class="token yellow-token" id="yellow3"></div>
+            <div class="token yellow-token" id="yellow4"></div>
+        </div>
+
+        <!-- Center -->
+        <div class="center">
+            <h2>LUDO</h2>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button id="rollDice">🎲 Roll Dice</button>
+        <h2>Dice: <span id="diceValue">0</span></h2>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
