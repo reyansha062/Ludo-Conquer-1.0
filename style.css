@@ -1,0 +1,16 @@
+:root{
+  --bg:#f7f8fb;
+  --panel:#fff;
+  --accent:#2b7cff;
+}
+*{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+body{margin:0;padding:24px;background:var(--bg);color:#111;display:flex;justify-content:center}
+main{width:760px;max-width:95%;background:var(--panel);padding:16px;border-radius:10px;box-shadow:0 6px 22px rgba(20,30,60,0.08)}
+h1{margin:0 0 12px;font-size:20px}
+.controls{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+button{padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);background:white;cursor:pointer}
+button:active{transform:translateY(1px)}
+#dice{min-width:36px;height:36px;border-radius:6px;border:1px solid #eee;display:flex;align-items:center;justify-content:center;font-weight:700}
+#status{color:#333;opacity:.9}
+#board{border-radius:8px;background:linear-gradient(180deg,#e9f0ff,#fff);display:block;margin:0 auto;box-shadow:inset 0 0 0 4px rgba(255,255,255,0.12)}
+.notes{font-size:13px;color:#666;margin-top:12px}
