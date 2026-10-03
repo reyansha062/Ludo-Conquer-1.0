@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ludo Board Classic</title>
+<title>Ludo Arena</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -14,36 +14,81 @@
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    padding: 24px 12px;
+    padding: 20px 10px;
   }
 
   h1 {
     font-size: 2rem;
     font-weight: 800;
-    letter-spacing: 1px;
     margin-bottom: 12px;
     background: linear-gradient(135deg, #ed8796, #eed49f, #a6da95, #8aadf4);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
-  .game-container {
+  /* Setup Screen Modal */
+  #setup-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 16, 25, 0.85);
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 16px;
+    justify-content: center;
+    z-index: 100;
   }
 
+  .setup-card {
+    background: #24273a;
+    padding: 30px 40px;
+    border-radius: 14px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .setup-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 18px;
+    color: #cad3f5;
+  }
+
+  .player-options {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+  }
+
+  .player-btn {
+    background: #363a4f;
+    color: #cad3f5;
+    border: 2px solid #5b6078;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.15s ease;
+  }
+
+  .player-btn:hover {
+    background: #8aadf4;
+    color: #181926;
+    border-color: #8aadf4;
+    transform: translateY(-2px);
+  }
+
+  /* In-Game HUD */
   .hud {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 480px;
+    width: 490px;
     max-width: 95vw;
     background: #24273a;
     padding: 12px 20px;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    margin-bottom: 14px;
   }
 
   .turn-indicator {
@@ -58,7 +103,6 @@
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    display: inline-block;
   }
 
   .dice-box {
@@ -68,8 +112,8 @@
   }
 
   .dice {
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
     background: #cad3f5;
     color: #181926;
     border-radius: 8px;
@@ -83,13 +127,13 @@
   }
 
   .rolling {
-    animation: shake 0.3s infinite;
+    animation: shake 0.25s infinite;
   }
 
   @keyframes shake {
     0% { transform: rotate(0deg) scale(1.05); }
-    25% { transform: rotate(10deg); }
-    75% { transform: rotate(-10deg); }
+    25% { transform: rotate(8deg); }
+    75% { transform: rotate(-8deg); }
     100% { transform: rotate(0deg); }
   }
 
@@ -116,16 +160,15 @@
     cursor: not-allowed;
   }
 
-  /* 15x15 Ludo Board Grid */
+  /* 15x15 Ludo Board */
   #board {
     display: grid;
     grid-template-columns: repeat(15, 32px);
     grid-template-rows: repeat(15, 32px);
-    background: #363a4f;
-    border: 4px solid #1e2030;
-    border-radius: 12px;
-    position: relative;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    background: #24273a;
+    border: 4px solid #11121d;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   }
 
   .cell {
@@ -143,18 +186,17 @@
   .green { background: #a6da95 !important; }
   .yellow { background: #eed49f !important; }
   .blue { background: #8aadf4 !important; }
-  .white { background: #cad3f5; }
-  .center-tile { background: #494d64; }
+  .center-tile { background: #363a4f; }
 
   .star::after {
     content: "★";
-    color: rgba(255,255,255,0.8);
-    font-size: 16px;
+    color: rgba(255,255,255,0.85);
+    font-size: 15px;
     position: absolute;
     pointer-events: none;
   }
 
-  /* Tokens */
+  /* Token Elements */
   .token {
     width: 22px;
     height: 22px;
@@ -165,9 +207,7 @@
     z-index: 10;
     transition: transform 0.12s ease;
   }
-  .token:hover {
-    transform: scale(1.25);
-  }
+  .token:hover { transform: scale(1.25); }
   .token.active-clickable {
     animation: pulse 0.7s infinite alternate;
   }
@@ -178,6 +218,7 @@
   }
 
   .status-msg {
+    margin-top: 14px;
     min-height: 24px;
     font-size: 0.95rem;
     color: #a5adcb;
@@ -189,42 +230,36 @@
 
 <h1>LUDO ARENA</h1>
 
-<div class="game-container">
-  <div class="hud">
-    <div class="turn-indicator">
-      <span>Turn:</span>
-      <span id="turn-dot" class="color-dot red"></span>
-      <span id="turn-name">Red</span>
-    </div>
-
-    <div class="dice-box">
-      <div id="dice-display" class="dice">-</div>
-      <button id="roll-button" class="btn" onclick="triggerRoll()">Roll</button>
+<!-- Start Overlay: Select Player Count -->
+<div id="setup-modal">
+  <div class="setup-card">
+    <h2>How many players?</h2>
+    <div class="player-options">
+      <button class="player-btn" onclick="startGame(2)">2 Players</button>
+      <button class="player-btn" onclick="startGame(3)">3 Players</button>
+      <button class="player-btn" onclick="startGame(4)">4 Players</button>
     </div>
   </div>
-
-  <div id="board"></div>
-  <div id="message" class="status-msg">Roll a 6 to release a token from home!</div>
 </div>
 
-<script>
-  // Simple Audio FX synthesis
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  function beep(freq, duration) {
-    try {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-      osc.start();
-      osc.stop(audioCtx.currentTime + duration);
-    } catch(e) {}
-  }
+<div class="hud">
+  <div class="turn-indicator">
+    <span>Turn:</span>
+    <span id="turn-dot" class="color-dot red"></span>
+    <span id="turn-name">Red</span>
+  </div>
 
-  // Common outer perimeter sequence (52 cells)
+  <div class="dice-box">
+    <div id="dice-display" class="dice">-</div>
+    <button id="roll-button" class="btn" onclick="triggerRoll()">Roll</button>
+  </div>
+</div>
+
+<div id="board"></div>
+<div id="message" class="status-msg">Select player count to begin.</div>
+
+<script>
+  // Track geometry (52 cells)
   const commonTrack = [
     [6,1],[6,2],[6,3],[6,4],[6,5],
     [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
@@ -240,49 +275,80 @@
     [7,0],[6,0]
   ];
 
-  function buildPlayerPath(startIdx, homeStrip) {
+  function buildPath(startIdx, homeStrip) {
     const arr = [];
-    for (let i = 0; i < 51; i++) {
-      arr.push(commonTrack[(startIdx + i) % 52]);
-    }
+    for (let i = 0; i < 51; i++) arr.push(commonTrack[(startIdx + i) % 52]);
     return arr.concat(homeStrip);
   }
 
-  const redPath = buildPlayerPath(50, [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]]);
-  const greenPath = buildPlayerPath(12, [[1,7],[2,7],[3,7],[4,7],[5,7],[7,7]]);
+  const redPath = buildPath(50, [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]]);
+  const greenPath = buildPath(12, [[1,7],[2,7],[3,7],[4,7],[5,7],[7,7]]);
+  const yellowPath = buildPath(25, [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]]);
+  const bluePath = buildPath(38, [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]);
 
-  // Safe coordinates where tokens cannot be captured
-  const safePoints = [
-    "6,1", "8,2", "2,6", "1,8", "6,13", "8,12", "12,8", "13,6"
-  ];
+  const safePoints = ["6,1", "8,2", "2,6", "1,8", "6,13", "8,12", "12,8", "13,6"];
 
-  const gameState = {
-    turn: "red",
-    dice: null,
-    hasRolled: false,
-    players: {
-      red: {
-        name: "Red",
-        colorClass: "red",
-        hex: "#ed8796",
-        path: redPath,
-        tokens: [
-          { id: 0, pos: -1, base: [2, 2] },
-          { id: 1, pos: -1, base: [3, 3] }
-        ]
-      },
-      green: {
-        name: "Green",
-        colorClass: "green",
-        hex: "#a6da95",
-        path: greenPath,
-        tokens: [
-          { id: 0, pos: -1, base: [2, 11] },
-          { id: 1, pos: -1, base: [3, 12] }
-        ]
-      }
+  const ALL_PLAYERS = {
+    red: {
+      name: "Red",
+      colorClass: "red",
+      path: redPath,
+      tokens: [
+        { id: 0, pos: -1, base: [2, 2] },
+        { id: 1, pos: -1, base: [3, 3] }
+      ]
+    },
+    green: {
+      name: "Green",
+      colorClass: "green",
+      path: greenPath,
+      tokens: [
+        { id: 0, pos: -1, base: [2, 11] },
+        { id: 1, pos: -1, base: [3, 12] }
+      ]
+    },
+    yellow: {
+      name: "Yellow",
+      colorClass: "yellow",
+      path: yellowPath,
+      tokens: [
+        { id: 0, pos: -1, base: [11, 11] },
+        { id: 1, pos: -1, base: [12, 12] }
+      ]
+    },
+    blue: {
+      name: "Blue",
+      colorClass: "blue",
+      path: bluePath,
+      tokens: [
+        { id: 0, pos: -1, base: [11, 2] },
+        { id: 1, pos: -1, base: [12, 3] }
+      ]
     }
   };
+
+  const gameState = {
+    activeOrder: [],
+    currentIdx: 0,
+    dice: null,
+    hasRolled: false
+  };
+
+  function startGame(numPlayers) {
+    document.getElementById("setup-modal").style.display = "none";
+
+    // 2 players: Red & Yellow (opposites); 3: Red, Green, Yellow; 4: Red, Green, Yellow, Blue
+    if (numPlayers === 2) {
+      gameState.activeOrder = ["red", "yellow"];
+    } else if (numPlayers === 3) {
+      gameState.activeOrder = ["red", "green", "yellow"];
+    } else {
+      gameState.activeOrder = ["red", "green", "yellow", "blue"];
+    }
+
+    createBoard();
+    updateHUD();
+  }
 
   function createBoard() {
     const board = document.getElementById("board");
@@ -294,21 +360,23 @@
         cell.className = "cell";
         cell.id = `cell-${r}-${c}`;
 
-        // Bases & Yard
+        // Color bases
         if (r < 6 && c < 6) cell.classList.add("red");
         else if (r < 6 && c > 8) cell.classList.add("green");
-        else if (r > 8 && c < 6) cell.classList.add("blue");
         else if (r > 8 && c > 8) cell.classList.add("yellow");
+        else if (r > 8 && c < 6) cell.classList.add("blue");
 
-        // Safe stars
+        // Star safe spots
         if (safePoints.includes(`${r},${c}`)) cell.classList.add("star");
 
-        // Center zone
+        // Center area
         if (r >= 6 && r <= 8 && c >= 6 && c <= 8) cell.classList.add("center-tile");
 
-        // Home stretches
+        // Home safe stretches
         if (r === 7 && c >= 1 && c <= 5) cell.classList.add("red");
         if (c === 7 && r >= 1 && r <= 5) cell.classList.add("green");
+        if (r === 7 && c >= 9 && c <= 13) cell.classList.add("yellow");
+        if (c === 7 && r >= 9 && r <= 13) cell.classList.add("blue");
 
         board.appendChild(cell);
       }
@@ -319,14 +387,16 @@
   function renderTokens() {
     document.querySelectorAll(".token").forEach(t => t.remove());
 
-    Object.keys(gameState.players).forEach(pKey => {
-      const p = gameState.players[pKey];
+    const curTurnKey = gameState.activeOrder[gameState.currentIdx];
+
+    gameState.activeOrder.forEach(pKey => {
+      const p = ALL_PLAYERS[pKey];
       p.tokens.forEach(t => {
         let coord;
         if (t.pos === -1) {
           coord = t.base;
         } else if (t.pos >= p.path.length) {
-          coord = [7, 7]; // Finished
+          coord = [7, 7]; // Finished at center
         } else {
           coord = p.path[t.pos];
         }
@@ -335,16 +405,14 @@
         if (cell) {
           const el = document.createElement("div");
           el.className = `token ${p.colorClass}`;
-          
-          const isTurn = gameState.turn === pKey && gameState.hasRolled;
+
+          const isTurn = curTurnKey === pKey && gameState.hasRolled;
           const canMove = isTurn && (
             (t.pos === -1 && gameState.dice === 6) ||
             (t.pos >= 0 && t.pos + gameState.dice < p.path.length)
           );
 
-          if (canMove) {
-            el.classList.add("active-clickable");
-          }
+          if (canMove) el.classList.add("active-clickable");
 
           el.onclick = () => onSelectToken(pKey, t.id);
           cell.appendChild(el);
@@ -364,7 +432,6 @@
     let rolls = 0;
     const interval = setInterval(() => {
       diceEl.innerText = Math.floor(Math.random() * 6) + 1;
-      beep(400, 0.05);
       rolls++;
       if (rolls > 6) {
         clearInterval(interval);
@@ -376,11 +443,11 @@
 
         evaluateTurnPossibilities();
       }
-    }, 50);
+    }, 45);
   }
 
   function evaluateTurnPossibilities() {
-    const curPlayer = gameState.players[gameState.turn];
+    const curPlayer = ALL_PLAYERS[gameState.activeOrder[gameState.currentIdx]];
     const validMoves = curPlayer.tokens.filter(t => {
       if (t.pos === -1) return gameState.dice === 6;
       return t.pos + gameState.dice < curPlayer.path.length;
@@ -388,7 +455,7 @@
 
     if (validMoves.length === 0) {
       document.getElementById("message").innerText = "No moves available. Passing turn...";
-      setTimeout(nextTurn, 1000);
+      setTimeout(nextTurn, 900);
     } else {
       document.getElementById("message").innerText = `Select a glowing ${curPlayer.name} token to move.`;
       renderTokens();
@@ -396,29 +463,27 @@
   }
 
   function onSelectToken(playerKey, tokenId) {
-    if (!gameState.hasRolled || gameState.turn !== playerKey) return;
+    const curTurnKey = gameState.activeOrder[gameState.currentIdx];
+    if (!gameState.hasRolled || curTurnKey !== playerKey) return;
 
-    const p = gameState.players[playerKey];
+    const p = ALL_PLAYERS[playerKey];
     const token = p.tokens[tokenId];
 
     if (token.pos === -1 && gameState.dice === 6) {
       token.pos = 0;
-      beep(600, 0.1);
       afterMovement(true);
       return;
     }
 
     if (token.pos >= 0 && token.pos + gameState.dice < p.path.length) {
       token.pos += gameState.dice;
-      beep(550, 0.08);
-
-      // Check capture
       const didCapture = verifyCapture(playerKey, token.pos);
-      
-      // Check win condition
+
+      // Win check
       if (p.tokens.every(t => t.pos === p.path.length - 1)) {
-        document.getElementById("message").innerText = `🎉 ${p.name.toUpperCase()} WINS THE GAME! 🎉`;
+        document.getElementById("message").innerText = `🎉 ${p.name.toUpperCase()} WINS! 🎉`;
         document.getElementById("roll-button").disabled = true;
+        renderTokens();
         return;
       }
 
@@ -427,26 +492,27 @@
   }
 
   function verifyCapture(curPlayerKey, landingPos) {
-    const curPlayer = gameState.players[curPlayerKey];
+    const curPlayer = ALL_PLAYERS[curPlayerKey];
     const landingCoord = curPlayer.path[landingPos];
 
-    // Star safe spots avoid captures
+    // Safe squares protect tokens
     if (safePoints.includes(`${landingCoord[0]},${landingCoord[1]}`)) return false;
 
-    const otherKey = curPlayerKey === "red" ? "green" : "red";
-    const otherPlayer = gameState.players[otherKey];
-
     let captured = false;
-    otherPlayer.tokens.forEach(t => {
-      if (t.pos >= 0 && t.pos < otherPlayer.path.length - 1) {
-        const oppCoord = otherPlayer.path[t.pos];
-        if (oppCoord[0] === landingCoord[0] && oppCoord[1] === landingCoord[1]) {
-          t.pos = -1;
-          captured = true;
-          beep(200, 0.3);
-          document.getElementById("message").innerText = `${curPlayer.name} captured ${otherPlayer.name}'s token! Extra turn!`;
+    gameState.activeOrder.forEach(otherKey => {
+      if (otherKey === curPlayerKey) return;
+      const otherPlayer = ALL_PLAYERS[otherKey];
+
+      otherPlayer.tokens.forEach(t => {
+        if (t.pos >= 0 && t.pos < otherPlayer.path.length - 1) {
+          const oppCoord = otherPlayer.path[t.pos];
+          if (oppCoord[0] === landingCoord[0] && oppCoord[1] === landingCoord[1]) {
+            t.pos = -1;
+            captured = true;
+            document.getElementById("message").innerText = `${curPlayer.name} captured ${otherPlayer.name}'s token! Extra turn!`;
+          }
         }
-      }
+      });
     });
 
     return captured;
@@ -466,21 +532,21 @@
   }
 
   function nextTurn() {
-    gameState.turn = gameState.turn === "red" ? "green" : "red";
+    gameState.currentIdx = (gameState.currentIdx + 1) % gameState.activeOrder.length;
     gameState.hasRolled = false;
     gameState.dice = null;
-
-    const cur = gameState.players[gameState.turn];
-    document.getElementById("turn-name").innerText = cur.name;
-    document.getElementById("turn-dot").className = `color-dot ${cur.colorClass}`;
-    document.getElementById("dice-display").innerText = "-";
-    document.getElementById("roll-button").disabled = false;
-    document.getElementById("message").innerText = `${cur.name}'s turn to roll!`;
-
+    updateHUD();
     renderTokens();
   }
 
-  createBoard();
+  function updateHUD() {
+    const curPlayer = ALL_PLAYERS[gameState.activeOrder[gameState.currentIdx]];
+    document.getElementById("turn-name").innerText = curPlayer.name;
+    document.getElementById("turn-dot").className = `color-dot ${curPlayer.colorClass}`;
+    document.getElementById("dice-display").innerText = "-";
+    document.getElementById("roll-button").disabled = false;
+    document.getElementById("message").innerText = `${curPlayer.name}'s turn to roll!`;
+  }
 </script>
 </body>
 </html>
