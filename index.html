@@ -1,23 +1,486 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ludo Conquer — Web</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ludo Board Classic</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #181926;
+    color: #cad3f5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 24px 12px;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #ed8796, #eed49f, #a6da95, #8aadf4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .hud {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 480px;
+    max-width: 95vw;
+    background: #24273a;
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  }
+
+  .turn-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .color-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .dice-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .dice {
+    width: 46px;
+    height: 46px;
+    background: #cad3f5;
+    color: #181926;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: bold;
+    box-shadow: 0 4px 0 #939ab7;
+    transition: transform 0.15s ease;
+  }
+
+  .rolling {
+    animation: shake 0.3s infinite;
+  }
+
+  @keyframes shake {
+    0% { transform: rotate(0deg) scale(1.05); }
+    25% { transform: rotate(10deg); }
+    75% { transform: rotate(-10deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  button.btn {
+    background: #8aadf4;
+    color: #181926;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #5b6078;
+    transition: 0.1s ease;
+  }
+  button.btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #5b6078;
+  }
+  button.btn:disabled {
+    background: #494d64;
+    color: #8087a2;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  /* 15x15 Ludo Board Grid */
+  #board {
+    display: grid;
+    grid-template-columns: repeat(15, 32px);
+    grid-template-rows: repeat(15, 32px);
+    background: #363a4f;
+    border: 4px solid #1e2030;
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+  }
+
+  .cell {
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* Color themes */
+  .red { background: #ed8796 !important; }
+  .green { background: #a6da95 !important; }
+  .yellow { background: #eed49f !important; }
+  .blue { background: #8aadf4 !important; }
+  .white { background: #cad3f5; }
+  .center-tile { background: #494d64; }
+
+  .star::after {
+    content: "★";
+    color: rgba(255,255,255,0.8);
+    font-size: 16px;
+    position: absolute;
+    pointer-events: none;
+  }
+
+  /* Tokens */
+  .token {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.5);
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.12s ease;
+  }
+  .token:hover {
+    transform: scale(1.25);
+  }
+  .token.active-clickable {
+    animation: pulse 0.7s infinite alternate;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); filter: brightness(1); }
+    100% { transform: scale(1.25); filter: brightness(1.3); }
+  }
+
+  .status-msg {
+    min-height: 24px;
+    font-size: 0.95rem;
+    color: #a5adcb;
+    text-align: center;
+  }
+</style>
 </head>
 <body>
-  <main>
-    <h1>Ludo Conquer — Web (starter)</h1>
-    <div class="controls">
-      <button id="rollBtn">Roll Dice</button>
-      <button id="endBtn">End Turn</button>
-      <div id="dice">—</div>
-      <div id="status"></div>
+
+<h1>LUDO ARENA</h1>
+
+<div class="game-container">
+  <div class="hud">
+    <div class="turn-indicator">
+      <span>Turn:</span>
+      <span id="turn-dot" class="color-dot red"></span>
+      <span id="turn-name">Red</span>
     </div>
-    <canvas id="board" width="600" height="600"></canvas>
-    <p class="notes">Pass-and-play demo. Click "Roll Dice", then click a token (home or on-board) to move if legal. Roll a 6 to enter the board.</p>
-  </main>
-  <script src="app.js"></script>
+
+    <div class="dice-box">
+      <div id="dice-display" class="dice">-</div>
+      <button id="roll-button" class="btn" onclick="triggerRoll()">Roll</button>
+    </div>
+  </div>
+
+  <div id="board"></div>
+  <div id="message" class="status-msg">Roll a 6 to release a token from home!</div>
+</div>
+
+<script>
+  // Simple Audio FX synthesis
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function beep(freq, duration) {
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
+  }
+
+  // Common outer perimeter sequence (52 cells)
+  const commonTrack = [
+    [6,1],[6,2],[6,3],[6,4],[6,5],
+    [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
+    [0,7],[0,8],
+    [1,8],[2,8],[3,8],[4,8],[5,8],
+    [6,9],[6,10],[6,11],[6,12],[6,13],[6,14],
+    [7,14],[8,14],
+    [8,13],[8,12],[8,11],[8,10],[8,9],
+    [9,8],[10,8],[11,8],[12,8],[13,8],[14,8],
+    [14,7],[14,6],
+    [13,6],[12,6],[11,6],[10,6],[9,6],
+    [8,5],[8,4],[8,3],[8,2],[8,1],[8,0],
+    [7,0],[6,0]
+  ];
+
+  function buildPlayerPath(startIdx, homeStrip) {
+    const arr = [];
+    for (let i = 0; i < 51; i++) {
+      arr.push(commonTrack[(startIdx + i) % 52]);
+    }
+    return arr.concat(homeStrip);
+  }
+
+  const redPath = buildPlayerPath(50, [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]]);
+  const greenPath = buildPlayerPath(12, [[1,7],[2,7],[3,7],[4,7],[5,7],[7,7]]);
+
+  // Safe coordinates where tokens cannot be captured
+  const safePoints = [
+    "6,1", "8,2", "2,6", "1,8", "6,13", "8,12", "12,8", "13,6"
+  ];
+
+  const gameState = {
+    turn: "red",
+    dice: null,
+    hasRolled: false,
+    players: {
+      red: {
+        name: "Red",
+        colorClass: "red",
+        hex: "#ed8796",
+        path: redPath,
+        tokens: [
+          { id: 0, pos: -1, base: [2, 2] },
+          { id: 1, pos: -1, base: [3, 3] }
+        ]
+      },
+      green: {
+        name: "Green",
+        colorClass: "green",
+        hex: "#a6da95",
+        path: greenPath,
+        tokens: [
+          { id: 0, pos: -1, base: [2, 11] },
+          { id: 1, pos: -1, base: [3, 12] }
+        ]
+      }
+    }
+  };
+
+  function createBoard() {
+    const board = document.getElementById("board");
+    board.innerHTML = "";
+
+    for (let r = 0; r < 15; r++) {
+      for (let c = 0; c < 15; c++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.id = `cell-${r}-${c}`;
+
+        // Bases & Yard
+        if (r < 6 && c < 6) cell.classList.add("red");
+        else if (r < 6 && c > 8) cell.classList.add("green");
+        else if (r > 8 && c < 6) cell.classList.add("blue");
+        else if (r > 8 && c > 8) cell.classList.add("yellow");
+
+        // Safe stars
+        if (safePoints.includes(`${r},${c}`)) cell.classList.add("star");
+
+        // Center zone
+        if (r >= 6 && r <= 8 && c >= 6 && c <= 8) cell.classList.add("center-tile");
+
+        // Home stretches
+        if (r === 7 && c >= 1 && c <= 5) cell.classList.add("red");
+        if (c === 7 && r >= 1 && r <= 5) cell.classList.add("green");
+
+        board.appendChild(cell);
+      }
+    }
+    renderTokens();
+  }
+
+  function renderTokens() {
+    document.querySelectorAll(".token").forEach(t => t.remove());
+
+    Object.keys(gameState.players).forEach(pKey => {
+      const p = gameState.players[pKey];
+      p.tokens.forEach(t => {
+        let coord;
+        if (t.pos === -1) {
+          coord = t.base;
+        } else if (t.pos >= p.path.length) {
+          coord = [7, 7]; // Finished
+        } else {
+          coord = p.path[t.pos];
+        }
+
+        const cell = document.getElementById(`cell-${coord[0]}-${coord[1]}`);
+        if (cell) {
+          const el = document.createElement("div");
+          el.className = `token ${p.colorClass}`;
+          
+          const isTurn = gameState.turn === pKey && gameState.hasRolled;
+          const canMove = isTurn && (
+            (t.pos === -1 && gameState.dice === 6) ||
+            (t.pos >= 0 && t.pos + gameState.dice < p.path.length)
+          );
+
+          if (canMove) {
+            el.classList.add("active-clickable");
+          }
+
+          el.onclick = () => onSelectToken(pKey, t.id);
+          cell.appendChild(el);
+        }
+      });
+    });
+  }
+
+  function triggerRoll() {
+    if (gameState.hasRolled) return;
+
+    const diceEl = document.getElementById("dice-display");
+    const btn = document.getElementById("roll-button");
+    btn.disabled = true;
+    diceEl.classList.add("rolling");
+
+    let rolls = 0;
+    const interval = setInterval(() => {
+      diceEl.innerText = Math.floor(Math.random() * 6) + 1;
+      beep(400, 0.05);
+      rolls++;
+      if (rolls > 6) {
+        clearInterval(interval);
+        diceEl.classList.remove("rolling");
+
+        gameState.dice = Math.floor(Math.random() * 6) + 1;
+        diceEl.innerText = gameState.dice;
+        gameState.hasRolled = true;
+
+        evaluateTurnPossibilities();
+      }
+    }, 50);
+  }
+
+  function evaluateTurnPossibilities() {
+    const curPlayer = gameState.players[gameState.turn];
+    const validMoves = curPlayer.tokens.filter(t => {
+      if (t.pos === -1) return gameState.dice === 6;
+      return t.pos + gameState.dice < curPlayer.path.length;
+    });
+
+    if (validMoves.length === 0) {
+      document.getElementById("message").innerText = "No moves available. Passing turn...";
+      setTimeout(nextTurn, 1000);
+    } else {
+      document.getElementById("message").innerText = `Select a glowing ${curPlayer.name} token to move.`;
+      renderTokens();
+    }
+  }
+
+  function onSelectToken(playerKey, tokenId) {
+    if (!gameState.hasRolled || gameState.turn !== playerKey) return;
+
+    const p = gameState.players[playerKey];
+    const token = p.tokens[tokenId];
+
+    if (token.pos === -1 && gameState.dice === 6) {
+      token.pos = 0;
+      beep(600, 0.1);
+      afterMovement(true);
+      return;
+    }
+
+    if (token.pos >= 0 && token.pos + gameState.dice < p.path.length) {
+      token.pos += gameState.dice;
+      beep(550, 0.08);
+
+      // Check capture
+      const didCapture = verifyCapture(playerKey, token.pos);
+      
+      // Check win condition
+      if (p.tokens.every(t => t.pos === p.path.length - 1)) {
+        document.getElementById("message").innerText = `🎉 ${p.name.toUpperCase()} WINS THE GAME! 🎉`;
+        document.getElementById("roll-button").disabled = true;
+        return;
+      }
+
+      afterMovement(gameState.dice === 6 || didCapture);
+    }
+  }
+
+  function verifyCapture(curPlayerKey, landingPos) {
+    const curPlayer = gameState.players[curPlayerKey];
+    const landingCoord = curPlayer.path[landingPos];
+
+    // Star safe spots avoid captures
+    if (safePoints.includes(`${landingCoord[0]},${landingCoord[1]}`)) return false;
+
+    const otherKey = curPlayerKey === "red" ? "green" : "red";
+    const otherPlayer = gameState.players[otherKey];
+
+    let captured = false;
+    otherPlayer.tokens.forEach(t => {
+      if (t.pos >= 0 && t.pos < otherPlayer.path.length - 1) {
+        const oppCoord = otherPlayer.path[t.pos];
+        if (oppCoord[0] === landingCoord[0] && oppCoord[1] === landingCoord[1]) {
+          t.pos = -1;
+          captured = true;
+          beep(200, 0.3);
+          document.getElementById("message").innerText = `${curPlayer.name} captured ${otherPlayer.name}'s token! Extra turn!`;
+        }
+      }
+    });
+
+    return captured;
+  }
+
+  function afterMovement(bonusTurn) {
+    renderTokens();
+    if (bonusTurn) {
+      gameState.hasRolled = false;
+      document.getElementById("roll-button").disabled = false;
+      if (!document.getElementById("message").innerText.includes("captured")) {
+        document.getElementById("message").innerText = "Rolled a 6! Roll again.";
+      }
+    } else {
+      nextTurn();
+    }
+  }
+
+  function nextTurn() {
+    gameState.turn = gameState.turn === "red" ? "green" : "red";
+    gameState.hasRolled = false;
+    gameState.dice = null;
+
+    const cur = gameState.players[gameState.turn];
+    document.getElementById("turn-name").innerText = cur.name;
+    document.getElementById("turn-dot").className = `color-dot ${cur.colorClass}`;
+    document.getElementById("dice-display").innerText = "-";
+    document.getElementById("roll-button").disabled = false;
+    document.getElementById("message").innerText = `${cur.name}'s turn to roll!`;
+
+    renderTokens();
+  }
+
+  createBoard();
+</script>
 </body>
 </html>
