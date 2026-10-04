@@ -1093,7 +1093,7 @@
       }
     }
 
-    // Fixed QR Code Generator with Guaranteed Scannability
+    // Fixed QR Code Generator pointing to Snake_Laders
     function renderQRCode() {
       const target = document.getElementById('qr-render-area');
       const modal = document.getElementById('modal-qr');
@@ -1101,7 +1101,8 @@
 
       target.replaceChildren();
 
-      let shareUrl = `https://reyansha062.github.io/whatscame/?room=${encodeURIComponent(App.room)}`;
+      // Explicitly points to Snake_Laders
+      let shareUrl = `https://reyansha062.github.io/Snake_Laders/?room=${encodeURIComponent(App.room)}`;
 
       try {
         if (typeof QRCode !== 'undefined') {
@@ -1228,11 +1229,11 @@
         document.getElementById('modal-qr').classList.add('hidden');
       });
 
-      // Copy Link Button
+      // Copy Link Button pointing to Snake_Laders
       document.getElementById('btn-copy-url').addEventListener('click', () => {
         let url = window.location.origin + window.location.pathname;
-        if (!url.includes('reyansha062.github.io')) {
-          url = 'https://reyansha062.github.io/whatscame/';
+        if (!url.includes('Snake_Laders')) {
+          url = 'https://reyansha062.github.io/Snake_Laders/';
         }
         url += `?room=${encodeURIComponent(App.room)}`;
 
