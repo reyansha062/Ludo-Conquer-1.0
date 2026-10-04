@@ -1,552 +1,998 @@
+<!--
+  Snakes & Ladders Arena
+  Created by Reyansh (@reyansha062)
+  Standalone Interactive 2-Player Arcade Board Game
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ludo Arena</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #181926;
-    color: #cad3f5;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px 10px;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snakes & Ladders Arena | by Reyansh</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    margin-bottom: 12px;
-    background: linear-gradient(135deg, #ed8796, #eed49f, #a6da95, #8aadf4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
-  /* Setup Screen Modal */
-  #setup-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 16, 25, 0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-  }
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Cinzel', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            arena: {
+              felt: '#064e3b',
+              feltDark: '#022c22',
+              gold: '#fbbf24',
+              goldLight: '#fde68a',
+              wood: '#2e1c14',
+              woodDark: '#1a0e08',
+              surface: '#0f172a',
+              card: '#1e293b',
+              border: '#334155'
+            }
+          }
+        }
+      }
+    }
+  </script>
 
-  .setup-card {
-    background: #24273a;
-    padding: 30px 40px;
-    border-radius: 14px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    border: 1px solid rgba(255,255,255,0.1);
-  }
+  <style>
+    /* 3D Dice styling */
+    .dice-container {
+      perspective: 600px;
+    }
+    .dice-cube {
+      width: 60px;
+      height: 60px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.17, 0.67, 0.22, 1.25);
+    }
+    .dice-face {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #e2e8f0);
+      border: 2px solid #cbd5e1;
+      border-radius: 14px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.1), 0 6px 14px rgba(0,0,0,0.4);
+      display: grid;
+      padding: 8px;
+    }
+    .pip {
+      display: block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #0f172a;
+      justify-self: center;
+      align-self: center;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+    }
+    .face-1 { transform: rotateY(0deg) translateZ(30px); display: flex; align-items: center; justify-content: center; }
+    .face-1 .pip { width: 16px; height: 16px; background: #dc2626; }
+    .face-6 { transform: rotateY(180deg) translateZ(30px); grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
+    .face-2 { transform: rotateY(-90deg) translateZ(30px); grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+    .face-2 .pip:nth-child(2) { grid-column: 2; grid-row: 2; }
+    .face-5 { transform: rotateY(90deg) translateZ(30px); grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
+    .face-5 .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
+    .face-5 .pip:nth-child(2) { grid-column: 3; grid-row: 1; }
+    .face-5 .pip:nth-child(3) { grid-column: 2; grid-row: 2; }
+    .face-5 .pip:nth-child(4) { grid-column: 1; grid-row: 3; }
+    .face-5 .pip:nth-child(5) { grid-column: 3; grid-row: 3; }
+    .face-3 { transform: rotateX(90deg) translateZ(30px); grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
+    .face-3 .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
+    .face-3 .pip:nth-child(2) { grid-column: 2; grid-row: 2; }
+    .face-3 .pip:nth-child(3) { grid-column: 3; grid-row: 3; }
+    .face-4 { transform: rotateX(-90deg) translateZ(30px); grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
-  .setup-card h2 {
-    font-size: 1.5rem;
-    margin-bottom: 18px;
-    color: #cad3f5;
-  }
+    @keyframes roll-tumble {
+      0% { transform: rotateX(0deg) rotateY(0deg) scale(1); }
+      30% { transform: rotateX(720deg) rotateY(360deg) scale(1.15) translateY(-10px); }
+      70% { transform: rotateX(1080deg) rotateY(720deg) scale(1.1) translateY(6px); }
+      100% { transform: rotateX(1440deg) rotateY(1080deg) scale(1); }
+    }
+    .rolling-anim {
+      animation: roll-tumble 0.6s cubic-bezier(0.2, 0.8, 0.4, 1);
+    }
 
-  .player-options {
-    display: flex;
-    gap: 14px;
-    justify-content: center;
-  }
+    .pawn-transition {
+      transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
 
-  .player-btn {
-    background: #363a4f;
-    color: #cad3f5;
-    border: 2px solid #5b6078;
-    padding: 12px 24px;
-    font-size: 1.2rem;
-    font-weight: 700;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.15s ease;
-  }
-
-  .player-btn:hover {
-    background: #8aadf4;
-    color: #181926;
-    border-color: #8aadf4;
-    transform: translateY(-2px);
-  }
-
-  /* In-Game HUD */
-  .hud {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 490px;
-    max-width: 95vw;
-    background: #24273a;
-    padding: 12px 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    margin-bottom: 14px;
-  }
-
-  .turn-indicator {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.1rem;
-    font-weight: 600;
-  }
-
-  .color-dot {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-  }
-
-  .dice-box {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .dice {
-    width: 44px;
-    height: 44px;
-    background: #cad3f5;
-    color: #181926;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.6rem;
-    font-weight: bold;
-    box-shadow: 0 4px 0 #939ab7;
-    transition: transform 0.15s ease;
-  }
-
-  .rolling {
-    animation: shake 0.25s infinite;
-  }
-
-  @keyframes shake {
-    0% { transform: rotate(0deg) scale(1.05); }
-    25% { transform: rotate(8deg); }
-    75% { transform: rotate(-8deg); }
-    100% { transform: rotate(0deg); }
-  }
-
-  button.btn {
-    background: #8aadf4;
-    color: #181926;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 3px 0 #5b6078;
-    transition: 0.1s ease;
-  }
-  button.btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 1px 0 #5b6078;
-  }
-  button.btn:disabled {
-    background: #494d64;
-    color: #8087a2;
-    box-shadow: none;
-    cursor: not-allowed;
-  }
-
-  /* 15x15 Ludo Board */
-  #board {
-    display: grid;
-    grid-template-columns: repeat(15, 32px);
-    grid-template-rows: repeat(15, 32px);
-    background: #24273a;
-    border: 4px solid #11121d;
-    border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  }
-
-  .cell {
-    width: 32px;
-    height: 32px;
-    border: 1px solid rgba(255,255,255,0.06);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-
-  /* Color themes */
-  .red { background: #ed8796 !important; }
-  .green { background: #a6da95 !important; }
-  .yellow { background: #eed49f !important; }
-  .blue { background: #8aadf4 !important; }
-  .center-tile { background: #363a4f; }
-
-  .star::after {
-    content: "★";
-    color: rgba(255,255,255,0.85);
-    font-size: 15px;
-    position: absolute;
-    pointer-events: none;
-  }
-
-  /* Token Elements */
-  .token {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 2px solid #ffffff;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.5);
-    cursor: pointer;
-    z-index: 10;
-    transition: transform 0.12s ease;
-  }
-  .token:hover { transform: scale(1.25); }
-  .token.active-clickable {
-    animation: pulse 0.7s infinite alternate;
-  }
-
-  @keyframes pulse {
-    0% { transform: scale(1); filter: brightness(1); }
-    100% { transform: scale(1.25); filter: brightness(1.3); }
-  }
-
-  .status-msg {
-    margin-top: 14px;
-    min-height: 24px;
-    font-size: 0.95rem;
-    color: #a5adcb;
-    text-align: center;
-  }
-</style>
+    /* Custom styled scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-slate-950">
 
-<h1>LUDO ARENA</h1>
+  <!-- TOP HEADER -->
+  <header class="bg-gradient-to-r from-arena-woodDark via-arena-wood to-arena-woodDark border-b-2 border-amber-600/40 px-3 sm:px-6 py-2.5 flex items-center justify-between shadow-2xl z-40 sticky top-0">
+    <div class="flex items-center space-x-3">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg border border-amber-300/50 text-2xl">
+        👑
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-display font-black text-amber-300 tracking-wider">SNAKES & LADDERS ARENA</h1>
+          <span class="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40 hidden sm:inline-block">2-Player Arcade</span>
+        </div>
+        <p class="text-xs text-amber-200/90 font-semibold flex items-center gap-1">
+          <span>Created by</span>
+          <span class="font-bold text-white bg-amber-600/30 px-1.5 py-0.5 rounded border border-amber-400/30">Reyansh (@reyansha062)</span>
+        </p>
+      </div>
+    </div>
 
-<!-- Start Overlay: Select Player Count -->
-<div id="setup-modal">
-  <div class="setup-card">
-    <h2>How many players?</h2>
-    <div class="player-options">
-      <button class="player-btn" onclick="startGame(2)">2 Players</button>
-      <button class="player-btn" onclick="startGame(3)">3 Players</button>
-      <button class="player-btn" onclick="startGame(4)">4 Players</button>
+    <!-- Header Actions -->
+    <div class="flex items-center gap-2">
+      <!-- Game Mode Dropdown -->
+      <select id="select-game-mode" class="bg-arena-card border border-amber-500/30 text-amber-300 text-xs font-bold rounded-xl px-2.5 py-2 focus:outline-none cursor-pointer">
+        <option value="pass">👥 Pass & Play (Local)</option>
+        <option value="bot">🤖 Play vs Bot</option>
+        <option value="online">🌐 Online Room (Sync)</option>
+      </select>
+
+      <!-- Invite / QR Button -->
+      <button id="btn-show-qr" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md transition active:scale-95 border border-amber-300/40">
+        <i data-lucide="qr-code" class="w-4 h-4"></i>
+        <span class="hidden md:inline">Share / QR</span>
+      </button>
+
+      <!-- Sound Toggle -->
+      <button id="btn-toggle-sound" class="p-2 bg-slate-900/80 hover:bg-slate-800 text-amber-400 rounded-xl border border-slate-700 transition" title="Toggle Sound">
+        <i id="sound-icon" data-lucide="volume-2" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Restart Game -->
+      <button id="btn-restart" class="p-2 bg-slate-900/80 hover:bg-rose-950 hover:text-rose-400 text-slate-300 rounded-xl border border-slate-700 transition" title="Reset Match">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN ARENA LAYOUT -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+    
+    <!-- LEFT 8 COLS: GAME BOARD & STATS -->
+    <div class="lg:col-span-8 flex flex-col items-center">
+      
+      <!-- SCOREBOARD / TURN HEADER -->
+      <div class="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-3 mb-3 flex items-center justify-between shadow-xl">
+        <!-- Player 1 Card (Red) -->
+        <div id="card-p1" class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-red-950/40 border-2 border-red-500 transition-all">
+          <div class="w-5 h-5 rounded-full bg-red-500 border-2 border-white shadow-[0_0_10px_rgba(239,68,68,0.8)]"></div>
+          <div>
+            <div id="label-p1" class="text-xs font-bold text-white">Player 1 (Red)</div>
+            <div class="text-[11px] text-red-300 font-semibold">Square: <span id="pos-p1" class="text-white text-sm font-bold">1</span></div>
+          </div>
+        </div>
+
+        <!-- Center Turn Notification -->
+        <div class="text-center px-2">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Turn to Roll</div>
+          <div id="turn-announcer" class="text-sm sm:text-base font-display font-black text-red-400 animate-pulse">
+            Player 1's Turn
+          </div>
+        </div>
+
+        <!-- Player 2 Card (Blue) -->
+        <div id="card-p2" class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 transition-all">
+          <div class="text-right">
+            <div id="label-p2" class="text-xs font-bold text-white">Player 2 (Blue)</div>
+            <div class="text-[11px] text-sky-300 font-semibold">Square: <span id="pos-p2" class="text-white text-sm font-bold">1</span></div>
+          </div>
+          <div class="w-5 h-5 rounded-full bg-sky-500 border-2 border-white shadow-[0_0_10px_rgba(14,165,233,0.8)]"></div>
+        </div>
+      </div>
+
+      <!-- THE 10x10 BOARD -->
+      <div class="relative w-full max-w-[580px] aspect-square rounded-3xl p-3 bg-gradient-to-br from-arena-wood via-arena-woodDark to-amber-950 shadow-[0_20px_50px_rgba(0,0,0,0.8)] border-4 border-amber-600/50">
+        
+        <!-- Inner Felt Board -->
+        <div class="relative w-full h-full rounded-2xl overflow-hidden shadow-inner border-2 border-emerald-900 bg-arena-feltDark">
+          
+          <!-- 100 Squares Grid -->
+          <div id="board-squares" class="absolute inset-0 grid grid-cols-10 grid-rows-10 w-full h-full"></div>
+
+          <!-- SVG Layer for Dynamic Snakes & Ladders -->
+          <svg id="svg-board-decorations" class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 1000 1000">
+            <defs>
+              <linearGradient id="snakeSkin" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#10b981" />
+                <stop offset="50%" stop-color="#059669" />
+                <stop offset="100%" stop-color="#047857" />
+              </linearGradient>
+              <linearGradient id="ladderWood" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#f59e0b" />
+                <stop offset="100%" stop-color="#b45309" />
+              </linearGradient>
+              <filter id="shadowFilter" x="-10%" y="-10%" width="130%" height="130%">
+                <feDropShadow dx="3" dy="5" stdDeviation="4" flood-color="#000000" flood-opacity="0.6"/>
+              </filter>
+            </defs>
+            <g id="svg-ladders" filter="url(#shadowFilter)"></g>
+            <g id="svg-snakes" filter="url(#shadowFilter)"></g>
+          </svg>
+
+          <!-- PLAYER 1 PAWN (RED) -->
+          <div id="pawn-1" class="absolute w-[8%] h-[8%] -ml-[4%] -mt-[4%] z-30 pawn-transition pointer-events-none filter drop-shadow-[0_6px_8px_rgba(0,0,0,0.8)]">
+            <svg viewBox="0 0 36 36" class="w-full h-full">
+              <circle cx="18" cy="11" r="8" fill="#ef4444" stroke="#ffffff" stroke-width="2.5"/>
+              <path d="M11 31 C11 20, 25 20, 25 31 Z" fill="#b91c1c" stroke="#ffffff" stroke-width="2"/>
+              <ellipse cx="18" cy="30" rx="9" ry="3" fill="#ffffff" opacity="0.4"/>
+            </svg>
+          </div>
+
+          <!-- PLAYER 2 PAWN (BLUE) -->
+          <div id="pawn-2" class="absolute w-[8%] h-[8%] -ml-[4%] -mt-[4%] z-30 pawn-transition pointer-events-none filter drop-shadow-[0_6px_8px_rgba(0,0,0,0.8)]">
+            <svg viewBox="0 0 36 36" class="w-full h-full">
+              <circle cx="18" cy="11" r="8" fill="#0ea5e9" stroke="#ffffff" stroke-width="2.5"/>
+              <path d="M11 31 C11 20, 25 20, 25 31 Z" fill="#0369a1" stroke="#ffffff" stroke-width="2"/>
+              <ellipse cx="18" cy="30" rx="9" ry="3" fill="#ffffff" opacity="0.4"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Board Legend -->
+      <div class="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-400">
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Player 1</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> Player 2</span>
+        <span class="text-amber-400 font-bold">🪜 8 Ladders</span>
+        <span class="text-emerald-400 font-bold">🐍 8 Snakes</span>
+        <span class="text-slate-300">Target: <strong class="text-amber-400 font-bold">100</strong> (Exact roll)</span>
+      </div>
+    </div>
+
+    <!-- RIGHT 4 COLS: 3D DICE & ARCADE CHAT / ACTIVITY FEED -->
+    <div class="lg:col-span-4 w-full flex flex-col gap-3">
+      
+      <!-- DICE CONTROL PANEL -->
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl text-center flex flex-col items-center relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-28 h-28 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <span class="text-xs font-display font-bold tracking-widest uppercase text-amber-400 mb-1">Arcade Dice Chamber</span>
+
+        <!-- 3D Dice Stage -->
+        <div class="dice-container py-4 cursor-pointer select-none" id="dice-touch-area" title="Click or tap to roll!">
+          <div id="dice-3d" class="dice-cube">
+            <div class="dice-face face-1"><span class="pip"></span></div>
+            <div class="dice-face face-2"><span class="pip"></span><span class="pip"></span></div>
+            <div class="dice-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+            <div class="dice-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+            <div class="dice-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+            <div class="dice-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+          </div>
+        </div>
+
+        <!-- Outcome Label -->
+        <div id="dice-status" class="text-xs font-bold text-amber-300 h-5 mb-2">
+          Click below or tap the die to roll!
+        </div>
+
+        <!-- Big Roll Button -->
+        <button 
+          id="btn-roll-dice"
+          type="button"
+          class="w-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-display font-black py-3.5 px-6 rounded-2xl shadow-xl shadow-amber-950/60 transition active:scale-95 flex items-center justify-center gap-2 border border-amber-300/50 cursor-pointer text-base"
+        >
+          <span>ROLL DICE</span>
+          <i data-lucide="dices" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- ARCADE LIVE CHAT & MATCH LOG FEED -->
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl flex flex-col h-[350px] shadow-2xl overflow-hidden">
+        <!-- Feed Header -->
+        <div class="bg-slate-800/80 px-4 py-2.5 border-b border-slate-700/80 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-xs font-display font-bold text-white tracking-wide">Match Activity & Chat</span>
+          </div>
+          <span id="room-code-tag" class="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">#arena-101</span>
+        </div>
+
+        <!-- Log & Messages Stream -->
+        <div id="activity-log" class="flex-1 p-3 overflow-y-auto space-y-2 text-xs">
+          <div class="text-center text-[10px] text-amber-300/80 py-1.5 px-3 bg-amber-500/10 rounded-xl border border-amber-500/20 font-medium">
+            🎲 Match started! First player to reach square 100 wins!
+          </div>
+        </div>
+
+        <!-- Quick Reactions -->
+        <div class="bg-slate-950 px-2 py-1.5 flex items-center justify-between border-t border-slate-800 text-sm">
+          <button type="button" class="quick-taunt hover:scale-125 transition p-1" data-msg="🎲 Good roll!">🎲</button>
+          <button type="button" class="quick-taunt hover:scale-125 transition p-1" data-msg="🐍 Beware of snakes!">🐍</button>
+          <button type="button" class="quick-taunt hover:scale-125 transition p-1" data-msg="🪜 Ladder power!">🪜</button>
+          <button type="button" class="quick-taunt hover:scale-125 transition p-1" data-msg="🔥 I am winning this!">🔥</button>
+          <button type="button" class="quick-taunt hover:scale-125 transition p-1" data-msg="🏆 GG WP!">🏆</button>
+        </div>
+
+        <!-- Chat Form -->
+        <form id="chat-input-form" class="p-2.5 bg-slate-800/90 border-t border-slate-700/80 flex items-center gap-2">
+          <input 
+            type="text" 
+            id="chat-field" 
+            placeholder="Send arcade message..." 
+            autocomplete="off" 
+            maxlength="100"
+            class="flex-1 bg-slate-950 border border-slate-700 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-400"
+          >
+          <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-slate-950 p-2 rounded-xl transition active:scale-95 font-bold">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FOOTER OWNERSHIP BADGE -->
+  <footer class="bg-arena-woodDark border-t border-amber-900/40 py-3 text-center text-xs text-slate-400">
+    <div class="flex flex-wrap items-center justify-center gap-2 px-4">
+      <span class="text-white font-bold">Snakes & Ladders Arena</span>
+      <span>•</span>
+      <span>Engineered & Owned by <strong class="text-amber-400 font-bold">Reyansh (@reyansha062)</strong></span>
+      <span>•</span>
+      <span class="text-slate-500">All rights reserved</span>
+    </div>
+  </footer>
+
+  <!-- QR / SHARE MODAL -->
+  <div id="modal-qr" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-center">
+      <button type="button" id="btn-close-qr" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-2 border border-amber-500/30 text-2xl">
+        🎲
+      </div>
+      <h3 class="text-lg font-display font-bold text-white">Invite Another Player</h3>
+      <p class="text-xs text-slate-400 mt-1 mb-4">Scan with a phone camera or share your room code</p>
+
+      <div class="bg-white p-3.5 rounded-2xl shadow-xl inline-block mx-auto mb-4 border-4 border-slate-200">
+        <div id="qr-render-area" class="w-[180px] h-[180px] flex items-center justify-center"></div>
+      </div>
+
+      <div class="space-y-2 text-left">
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase font-bold">Match Room</div>
+            <div id="qr-display-room" class="text-amber-400 font-mono font-bold text-sm">arena-101</div>
+          </div>
+          <button id="btn-copy-url" type="button" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 active:scale-95">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Copy Link</span>
+          </button>
+        </div>
+      </div>
+
+      <p class="text-[11px] text-slate-500 mt-4">Snakes & Ladders Arena • Built by Reyansh</p>
     </div>
   </div>
-</div>
 
-<div class="hud">
-  <div class="turn-indicator">
-    <span>Turn:</span>
-    <span id="turn-dot" class="color-dot red"></span>
-    <span id="turn-name">Red</span>
+  <!-- VICTORY MODAL -->
+  <div id="modal-victory" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
+      <div class="text-6xl mb-3 animate-bounce">🏆</div>
+      <h2 class="text-2xl font-display font-bold text-amber-400" id="winner-title">Player 1 Wins!</h2>
+      <p class="text-xs text-slate-300 mt-2 mb-6">Landed on square 100 and conquered the snakes!</p>
+      
+      <button 
+        type="button" 
+        id="btn-play-again"
+        class="w-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-display font-black py-3 rounded-xl transition shadow-lg text-sm"
+      >
+        PLAY REMATCH
+      </button>
+    </div>
   </div>
 
-  <div class="dice-box">
-    <div id="dice-display" class="dice">-</div>
-    <button id="roll-button" class="btn" onclick="triggerRoll()">Roll</button>
-  </div>
-</div>
+  <script>
+    // Authentic Snake & Ladder Board Mapping
+    const LADDERS = {
+      4: 14,
+      9: 31,
+      20: 38,
+      28: 84,
+      40: 59,
+      51: 67,
+      63: 81,
+      71: 91
+    };
 
-<div id="board"></div>
-<div id="message" class="status-msg">Select player count to begin.</div>
+    const SNAKES = {
+      17: 7,
+      54: 34,
+      62: 19,
+      64: 60,
+      87: 24,
+      93: 73,
+      95: 75,
+      99: 78
+    };
 
-<script>
-  // Track geometry (52 cells)
-  const commonTrack = [
-    [6,1],[6,2],[6,3],[6,4],[6,5],
-    [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
-    [0,7],[0,8],
-    [1,8],[2,8],[3,8],[4,8],[5,8],
-    [6,9],[6,10],[6,11],[6,12],[6,13],[6,14],
-    [7,14],[8,14],
-    [8,13],[8,12],[8,11],[8,10],[8,9],
-    [9,8],[10,8],[11,8],[12,8],[13,8],[14,8],
-    [14,7],[14,6],
-    [13,6],[12,6],[11,6],[10,6],[9,6],
-    [8,5],[8,4],[8,3],[8,2],[8,1],[8,0],
-    [7,0],[6,0]
-  ];
+    // Game State
+    const App = {
+      p1Pos: 1,
+      p2Pos: 1,
+      currentTurn: 1, // 1: Player 1 (Red), 2: Player 2 (Blue)
+      mode: 'pass', // 'pass', 'bot', 'online'
+      isRolling: false,
+      sound: true,
+      room: 'arena-101',
+      channel: null,
+      audioCtx: null
+    };
 
-  function buildPath(startIdx, homeStrip) {
-    const arr = [];
-    for (let i = 0; i < 51; i++) arr.push(commonTrack[(startIdx + i) % 52]);
-    return arr.concat(homeStrip);
-  }
+    // Synthesized Sound FX using Web Audio API (Zero external assets needed)
+    function playAudio(type) {
+      if (!App.sound) return;
+      try {
+        if (!App.audioCtx) {
+          App.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (App.audioCtx.state === 'suspended') {
+          App.audioCtx.resume();
+        }
 
-  const redPath = buildPath(50, [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]]);
-  const greenPath = buildPath(12, [[1,7],[2,7],[3,7],[4,7],[5,7],[7,7]]);
-  const yellowPath = buildPath(25, [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]]);
-  const bluePath = buildPath(38, [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]);
+        const ctx = App.audioCtx;
+        const now = ctx.currentTime;
 
-  const safePoints = ["6,1", "8,2", "2,6", "1,8", "6,13", "8,12", "12,8", "13,6"];
-
-  const ALL_PLAYERS = {
-    red: {
-      name: "Red",
-      colorClass: "red",
-      path: redPath,
-      tokens: [
-        { id: 0, pos: -1, base: [2, 2] },
-        { id: 1, pos: -1, base: [3, 3] }
-      ]
-    },
-    green: {
-      name: "Green",
-      colorClass: "green",
-      path: greenPath,
-      tokens: [
-        { id: 0, pos: -1, base: [2, 11] },
-        { id: 1, pos: -1, base: [3, 12] }
-      ]
-    },
-    yellow: {
-      name: "Yellow",
-      colorClass: "yellow",
-      path: yellowPath,
-      tokens: [
-        { id: 0, pos: -1, base: [11, 11] },
-        { id: 1, pos: -1, base: [12, 12] }
-      ]
-    },
-    blue: {
-      name: "Blue",
-      colorClass: "blue",
-      path: bluePath,
-      tokens: [
-        { id: 0, pos: -1, base: [11, 2] },
-        { id: 1, pos: -1, base: [12, 3] }
-      ]
+        if (type === 'roll') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(180, now);
+          osc.frequency.exponentialRampToValueAtTime(320, now + 0.15);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        } else if (type === 'step') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else if (type === 'ladder') {
+          [330, 440, 550, 660].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + (idx + 1) * 0.08);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + (idx + 1) * 0.08);
+          });
+        } else if (type === 'snake') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.exponentialRampToValueAtTime(140, now + 0.35);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'win') {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+            gain.gain.setValueAtTime(0.3, now + idx * 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.3);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 0.3);
+          });
+        }
+      } catch (e) {}
     }
-  };
 
-  const gameState = {
-    activeOrder: [],
-    currentIdx: 0,
-    dice: null,
-    hasRolled: false
-  };
-
-  function startGame(numPlayers) {
-    document.getElementById("setup-modal").style.display = "none";
-
-    // 2 players: Red & Yellow (opposites); 3: Red, Green, Yellow; 4: Red, Green, Yellow, Blue
-    if (numPlayers === 2) {
-      gameState.activeOrder = ["red", "yellow"];
-    } else if (numPlayers === 3) {
-      gameState.activeOrder = ["red", "green", "yellow"];
-    } else {
-      gameState.activeOrder = ["red", "green", "yellow", "blue"];
+    // Grid Coordinates: 10x10 Zigzag Boustrophedon
+    function getTileRowCol(tileNum) {
+      const idx = tileNum - 1;
+      const rowFromBottom = Math.floor(idx / 10);
+      const rowFromTop = 9 - rowFromBottom;
+      let colFromLeft = idx % 10;
+      if (rowFromBottom % 2 === 1) {
+        colFromLeft = 9 - colFromLeft;
+      }
+      return { row: rowFromTop, col: colFromLeft };
     }
 
-    createBoard();
-    updateHUD();
-  }
+    function getTilePercentCoords(tileNum) {
+      const { row, col } = getTileRowCol(tileNum);
+      return {
+        x: (col * 10) + 5,
+        y: (row * 10) + 5
+      };
+    }
 
-  function createBoard() {
-    const board = document.getElementById("board");
-    board.innerHTML = "";
+    // Build Board Grid DOM
+    function renderBoardGrid() {
+      const grid = document.getElementById('board-squares');
+      if (!grid) return;
+      grid.innerHTML = '';
 
-    for (let r = 0; r < 15; r++) {
-      for (let c = 0; c < 15; c++) {
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        cell.id = `cell-${r}-${c}`;
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < 10; c++) {
+          const rowFromBottom = 9 - r;
+          let col = (rowFromBottom % 2 === 1) ? (9 - c) : c;
+          const tile = (rowFromBottom * 10) + col + 1;
 
-        // Color bases
-        if (r < 6 && c < 6) cell.classList.add("red");
-        else if (r < 6 && c > 8) cell.classList.add("green");
-        else if (r > 8 && c > 8) cell.classList.add("yellow");
-        else if (r > 8 && c < 6) cell.classList.add("blue");
+          const cell = document.createElement('div');
+          const isEven = (r + c) % 2 === 0;
 
-        // Star safe spots
-        if (safePoints.includes(`${r},${c}`)) cell.classList.add("star");
+          cell.className = `relative flex items-start justify-end p-1 border border-emerald-800/40 text-[10px] sm:text-xs font-bold ${
+            isEven ? 'bg-arena-felt/80 text-emerald-100' : 'bg-arena-feltDark/90 text-emerald-200/90'
+          }`;
 
-        // Center area
-        if (r >= 6 && r <= 8 && c >= 6 && c <= 8) cell.classList.add("center-tile");
+          if (tile === 100) {
+            cell.className += ' bg-gradient-to-br from-amber-500 to-yellow-600 text-slate-950 font-black shadow-inner';
+            cell.innerHTML = `<span>100 🏆</span>`;
+          } else if (tile === 1) {
+            cell.className += ' bg-emerald-950 text-amber-300';
+            cell.innerHTML = `<span>1 🏁</span>`;
+          } else {
+            let label = `${tile}`;
+            if (LADDERS[tile]) label += ` 🪜`;
+            if (SNAKES[tile]) label += ` 🐍`;
+            cell.innerHTML = `<span>${label}</span>`;
+          }
 
-        // Home safe stretches
-        if (r === 7 && c >= 1 && c <= 5) cell.classList.add("red");
-        if (c === 7 && r >= 1 && r <= 5) cell.classList.add("green");
-        if (r === 7 && c >= 9 && c <= 13) cell.classList.add("yellow");
-        if (c === 7 && r >= 9 && r <= 13) cell.classList.add("blue");
-
-        board.appendChild(cell);
+          grid.appendChild(cell);
+        }
       }
     }
-    renderTokens();
-  }
 
-  function renderTokens() {
-    document.querySelectorAll(".token").forEach(t => t.remove());
+    // Draw Dynamic Snakes & Ladders on SVG
+    function drawDecorations() {
+      const gLadders = document.getElementById('svg-ladders');
+      const gSnakes = document.getElementById('svg-snakes');
+      if (!gLadders || !gSnakes) return;
 
-    const curTurnKey = gameState.activeOrder[gameState.currentIdx];
+      gLadders.innerHTML = '';
+      gSnakes.innerHTML = '';
 
-    gameState.activeOrder.forEach(pKey => {
-      const p = ALL_PLAYERS[pKey];
-      p.tokens.forEach(t => {
-        let coord;
-        if (t.pos === -1) {
-          coord = t.base;
-        } else if (t.pos >= p.path.length) {
-          coord = [7, 7]; // Finished at center
-        } else {
-          coord = p.path[t.pos];
-        }
+      // Ladders
+      Object.entries(LADDERS).forEach(([from, to]) => {
+        const start = getTilePercentCoords(Number(from));
+        const end = getTilePercentCoords(Number(to));
 
-        const cell = document.getElementById(`cell-${coord[0]}-${coord[1]}`);
-        if (cell) {
-          const el = document.createElement("div");
-          el.className = `token ${p.colorClass}`;
+        const x1 = start.x * 10, y1 = start.y * 10;
+        const x2 = end.x * 10, y2 = end.y * 10;
 
-          const isTurn = curTurnKey === pKey && gameState.hasRolled;
-          const canMove = isTurn && (
-            (t.pos === -1 && gameState.dice === 6) ||
-            (t.pos >= 0 && t.pos + gameState.dice < p.path.length)
-          );
-
-          if (canMove) el.classList.add("active-clickable");
-
-          el.onclick = () => onSelectToken(pKey, t.id);
-          cell.appendChild(el);
-        }
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('stroke', 'url(#ladderWood)');
+        line.setAttribute('stroke-width', '18');
+        line.setAttribute('stroke-linecap', 'round');
+        line.setAttribute('stroke-dasharray', '5 9');
+        line.setAttribute('opacity', '0.9');
+        gLadders.appendChild(line);
       });
-    });
-  }
 
-  function triggerRoll() {
-    if (gameState.hasRolled) return;
+      // Snakes
+      Object.entries(SNAKES).forEach(([from, to]) => {
+        const start = getTilePercentCoords(Number(from));
+        const end = getTilePercentCoords(Number(to));
 
-    const diceEl = document.getElementById("dice-display");
-    const btn = document.getElementById("roll-button");
-    btn.disabled = true;
-    diceEl.classList.add("rolling");
+        const x1 = start.x * 10, y1 = start.y * 10;
+        const x2 = end.x * 10, y2 = end.y * 10;
+        const mx = (x1 + x2) / 2 + (x1 > x2 ? 55 : -55);
+        const my = (y1 + y2) / 2;
 
-    let rolls = 0;
-    const interval = setInterval(() => {
-      diceEl.innerText = Math.floor(Math.random() * 6) + 1;
-      rolls++;
-      if (rolls > 6) {
-        clearInterval(interval);
-        diceEl.classList.remove("rolling");
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', 'url(#snakeSkin)');
+        path.setAttribute('stroke-width', '15');
+        path.setAttribute('stroke-linecap', 'round');
 
-        gameState.dice = Math.floor(Math.random() * 6) + 1;
-        diceEl.innerText = gameState.dice;
-        gameState.hasRolled = true;
+        // Snake Head
+        const head = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        head.setAttribute('cx', x1);
+        head.setAttribute('cy', y1);
+        head.setAttribute('r', '11');
+        head.setAttribute('fill', '#ef4444');
+        head.setAttribute('stroke', '#ffffff');
+        head.setAttribute('stroke-width', '2');
 
-        evaluateTurnPossibilities();
+        gSnakes.appendChild(path);
+        gSnakes.appendChild(head);
+      });
+    }
+
+    // Pawn Placement
+    function setPawnTile(player, tile) {
+      const coords = getTilePercentCoords(tile);
+      const pawn = document.getElementById(`pawn-${player}`);
+      if (!pawn) return;
+
+      const offset = (player === 1) ? -1.8 : 1.8;
+      pawn.style.left = `${coords.x + offset}%`;
+      pawn.style.top = `${coords.y + offset}%`;
+
+      if (player === 1) {
+        App.p1Pos = tile;
+        document.getElementById('pos-p1').textContent = tile;
+      } else {
+        App.p2Pos = tile;
+        document.getElementById('pos-p2').textContent = tile;
       }
-    }, 45);
-  }
-
-  function evaluateTurnPossibilities() {
-    const curPlayer = ALL_PLAYERS[gameState.activeOrder[gameState.currentIdx]];
-    const validMoves = curPlayer.tokens.filter(t => {
-      if (t.pos === -1) return gameState.dice === 6;
-      return t.pos + gameState.dice < curPlayer.path.length;
-    });
-
-    if (validMoves.length === 0) {
-      document.getElementById("message").innerText = "No moves available. Passing turn...";
-      setTimeout(nextTurn, 900);
-    } else {
-      document.getElementById("message").innerText = `Select a glowing ${curPlayer.name} token to move.`;
-      renderTokens();
-    }
-  }
-
-  function onSelectToken(playerKey, tokenId) {
-    const curTurnKey = gameState.activeOrder[gameState.currentIdx];
-    if (!gameState.hasRolled || curTurnKey !== playerKey) return;
-
-    const p = ALL_PLAYERS[playerKey];
-    const token = p.tokens[tokenId];
-
-    if (token.pos === -1 && gameState.dice === 6) {
-      token.pos = 0;
-      afterMovement(true);
-      return;
     }
 
-    if (token.pos >= 0 && token.pos + gameState.dice < p.path.length) {
-      token.pos += gameState.dice;
-      const didCapture = verifyCapture(playerKey, token.pos);
+    // Turn Updates
+    function updateTurnUI(player) {
+      App.currentTurn = player;
+      const turnTxt = document.getElementById('turn-announcer');
+      const cardP1 = document.getElementById('card-p1');
+      const cardP2 = document.getElementById('card-p2');
 
-      // Win check
-      if (p.tokens.every(t => t.pos === p.path.length - 1)) {
-        document.getElementById("message").innerText = `🎉 ${p.name.toUpperCase()} WINS! 🎉`;
-        document.getElementById("roll-button").disabled = true;
-        renderTokens();
+      if (player === 1) {
+        turnTxt.textContent = "Player 1's Turn";
+        turnTxt.className = "text-sm sm:text-base font-display font-black text-red-400 animate-pulse";
+        cardP1.className = "flex items-center gap-2.5 px-3 py-2 rounded-xl bg-red-950/50 border-2 border-red-500 shadow-lg transition-all";
+        cardP2.className = "flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 transition-all opacity-70";
+      } else {
+        const nameP2 = (App.mode === 'bot') ? 'Bot (Blue)' : "Player 2's Turn";
+        turnTxt.textContent = nameP2;
+        turnTxt.className = "text-sm sm:text-base font-display font-black text-sky-400 animate-pulse";
+        cardP2.className = "flex items-center gap-2.5 px-3 py-2 rounded-xl bg-sky-950/50 border-2 border-sky-500 shadow-lg transition-all";
+        cardP1.className = "flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 transition-all opacity-70";
+      }
+    }
+
+    // 3D Dice Rotations
+    const ROTATIONS = {
+      1: 'rotateY(0deg) rotateX(0deg)',
+      2: 'rotateY(90deg) rotateX(0deg)',
+      3: 'rotateX(-90deg) rotateY(0deg)',
+      4: 'rotateX(90deg) rotateY(0deg)',
+      5: 'rotateY(-90deg) rotateX(0deg)',
+      6: 'rotateY(180deg) rotateX(0deg)'
+    };
+
+    async function rollDiceAction(forcedVal = null) {
+      if (App.isRolling) return;
+      App.isRolling = true;
+
+      const diceCube = document.getElementById('dice-3d');
+      const statusLabel = document.getElementById('dice-status');
+
+      playAudio('roll');
+      diceCube.classList.add('rolling-anim');
+      statusLabel.textContent = 'Shaking the die...';
+
+      await new Promise(r => setTimeout(r, 600));
+
+      const rollVal = forcedVal || (Math.floor(Math.random() * 6) + 1);
+      diceCube.classList.remove('rolling-anim');
+      diceCube.style.transform = ROTATIONS[rollVal] || ROTATIONS[1];
+      statusLabel.textContent = `Rolled a ${rollVal}!`;
+
+      // Broadcast if online mode
+      if (App.mode === 'online' && !forcedVal) {
+        broadcastSync({ type: 'DICE_ROLL', val: rollVal, turn: App.currentTurn });
+      }
+
+      await advancePlayer(App.currentTurn, rollVal);
+      App.isRolling = false;
+
+      // Handle Bot Turn
+      if (App.mode === 'bot' && App.currentTurn === 2) {
+        setTimeout(() => {
+          rollDiceAction();
+        }, 800);
+      }
+    }
+
+    async function advancePlayer(player, steps) {
+      let cur = (player === 1) ? App.p1Pos : App.p2Pos;
+      const target = cur + steps;
+      const pName = (player === 1) ? 'Player 1 (Red)' : ((App.mode === 'bot') ? 'Bot (Blue)' : 'Player 2 (Blue)');
+
+      if (target > 100) {
+        addLogMessage('System', `${pName} needs an exact roll to land on 100!`);
+        updateTurnUI(player === 1 ? 2 : 1);
         return;
       }
 
-      afterMovement(gameState.dice === 6 || didCapture);
-    }
-  }
-
-  function verifyCapture(curPlayerKey, landingPos) {
-    const curPlayer = ALL_PLAYERS[curPlayerKey];
-    const landingCoord = curPlayer.path[landingPos];
-
-    // Safe squares protect tokens
-    if (safePoints.includes(`${landingCoord[0]},${landingCoord[1]}`)) return false;
-
-    let captured = false;
-    gameState.activeOrder.forEach(otherKey => {
-      if (otherKey === curPlayerKey) return;
-      const otherPlayer = ALL_PLAYERS[otherKey];
-
-      otherPlayer.tokens.forEach(t => {
-        if (t.pos >= 0 && t.pos < otherPlayer.path.length - 1) {
-          const oppCoord = otherPlayer.path[t.pos];
-          if (oppCoord[0] === landingCoord[0] && oppCoord[1] === landingCoord[1]) {
-            t.pos = -1;
-            captured = true;
-            document.getElementById("message").innerText = `${curPlayer.name} captured ${otherPlayer.name}'s token! Extra turn!`;
-          }
-        }
-      });
-    });
-
-    return captured;
-  }
-
-  function afterMovement(bonusTurn) {
-    renderTokens();
-    if (bonusTurn) {
-      gameState.hasRolled = false;
-      document.getElementById("roll-button").disabled = false;
-      if (!document.getElementById("message").innerText.includes("captured")) {
-        document.getElementById("message").innerText = "Rolled a 6! Roll again.";
+      for (let s = 1; s <= steps; s++) {
+        cur++;
+        setPawnTile(player, cur);
+        playAudio('step');
+        await new Promise(r => setTimeout(r, 200));
       }
-    } else {
-      nextTurn();
+
+      // Check Ladder
+      if (LADDERS[cur]) {
+        playAudio('ladder');
+        const climb = LADDERS[cur];
+        addLogMessage('🪜 Ladder', `${pName} climbed ladder from square ${cur} to ${climb}!`);
+        await new Promise(r => setTimeout(r, 250));
+        cur = climb;
+        setPawnTile(player, cur);
+      } 
+      // Check Snake
+      else if (SNAKES[cur]) {
+        playAudio('snake');
+        const slide = SNAKES[cur];
+        addLogMessage('🐍 Snake', `${pName} got bitten on square ${cur} and slid to ${slide}!`);
+        await new Promise(r => setTimeout(r, 250));
+        cur = slide;
+        setPawnTile(player, cur);
+      }
+
+      // Check Victory
+      if (cur >= 100) {
+        playAudio('win');
+        document.getElementById('winner-title').textContent = `${pName} Wins!`;
+        document.getElementById('modal-victory').classList.remove('hidden');
+        if (window.confetti) {
+          confetti({ particleCount: 160, spread: 80, origin: { y: 0.6 } });
+        }
+        return;
+      }
+
+      // Roll 6 bonus turn rule
+      if (steps === 6) {
+        addLogMessage('Bonus', `🎉 ${pName} rolled a 6! Extra turn awarded!`);
+        updateTurnUI(player);
+      } else {
+        updateTurnUI(player === 1 ? 2 : 1);
+      }
     }
-  }
 
-  function nextTurn() {
-    gameState.currentIdx = (gameState.currentIdx + 1) % gameState.activeOrder.length;
-    gameState.hasRolled = false;
-    gameState.dice = null;
-    updateHUD();
-    renderTokens();
-  }
+    // In-Game Activity & Chat System
+    function addLogMessage(sender, text) {
+      const container = document.getElementById('activity-log');
+      if (!container) return;
 
-  function updateHUD() {
-    const curPlayer = ALL_PLAYERS[gameState.activeOrder[gameState.currentIdx]];
-    document.getElementById("turn-name").innerText = curPlayer.name;
-    document.getElementById("turn-dot").className = `color-dot ${curPlayer.colorClass}`;
-    document.getElementById("dice-display").innerText = "-";
-    document.getElementById("roll-button").disabled = false;
-    document.getElementById("message").innerText = `${curPlayer.name}'s turn to roll!`;
-  }
-</script>
+      const item = document.createElement('div');
+      const isSystem = sender.includes('Ladder') || sender.includes('Snake') || sender === 'System' || sender === 'Bonus';
+
+      if (isSystem) {
+        item.className = 'text-center text-[10px] text-amber-300/90 py-1 px-2.5 bg-slate-950/60 rounded-xl border border-slate-800 font-semibold';
+        item.textContent = text;
+      } else {
+        item.className = 'bg-slate-950 p-2 rounded-xl border border-slate-800';
+        item.innerHTML = `
+          <div class="text-[10px] font-bold text-amber-400 mb-0.5">${sender}</div>
+          <div class="text-xs text-slate-200">${text}</div>
+        `;
+      }
+
+      container.appendChild(item);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Reset Match
+    function resetMatch() {
+      App.p1Pos = 1;
+      App.p2Pos = 1;
+      setPawnTile(1, 1);
+      setPawnTile(2, 1);
+      updateTurnUI(1);
+      document.getElementById('modal-victory').classList.add('hidden');
+      document.getElementById('dice-status').textContent = 'Match reset! Tap die or button to roll.';
+      addLogMessage('System', 'Match reset to initial squares!');
+      if (App.mode === 'online') {
+        broadcastSync({ type: 'RESET' });
+      }
+    }
+
+    // QR Code Generator
+    function showQRCode() {
+      const target = document.getElementById('qr-render-area');
+      const modal = document.getElementById('modal-qr');
+      if (!target || !modal) return;
+      target.innerHTML = '';
+
+      let shareUrl = window.location.origin + window.location.pathname;
+      if (!shareUrl.includes('reyansha062.github.io')) {
+        shareUrl = 'https://reyansha062.github.io/whatscame/';
+      }
+      shareUrl += `?room=${encodeURIComponent(App.room)}`;
+
+      try {
+        if (typeof QRCode !== 'undefined') {
+          new QRCode(target, {
+            text: shareUrl,
+            width: 180,
+            height: 180,
+            colorDark: '#022c22',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } else {
+          target.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(shareUrl)}" alt="QR Code" class="w-[180px] h-[180px]"/>`;
+        }
+      } catch (e) {
+        target.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(shareUrl)}" alt="QR Code" class="w-[180px] h-[180px]"/>`;
+      }
+
+      document.getElementById('qr-display-room').textContent = App.room;
+      modal.classList.remove('hidden');
+    }
+
+    // BroadcastChannel for Seamless Cross-Tab Sync
+    function initOnlineSync() {
+      try {
+        if (App.channel) App.channel.close();
+        App.channel = new BroadcastChannel(`sl_arena_${App.room}`);
+        App.channel.onmessage = (e) => {
+          const data = e.data;
+          if (!data) return;
+          if (data.type === 'DICE_ROLL') {
+            rollDiceAction(data.val);
+          } else if (data.type === 'CHAT') {
+            addLogMessage(data.sender, data.text);
+          } else if (data.type === 'RESET') {
+            resetMatch();
+          }
+        };
+      } catch (e) {}
+    }
+
+    function broadcastSync(msg) {
+      if (App.channel) {
+        App.channel.postMessage(msg);
+      }
+    }
+
+    // Attach Event Listeners
+    window.addEventListener('DOMContentLoaded', () => {
+      renderBoardGrid();
+      drawDecorations();
+      setPawnTile(1, 1);
+      setPawnTile(2, 1);
+      updateTurnUI(1);
+
+      if (window.lucide) lucide.createIcons();
+
+      // Dice roll triggers
+      document.getElementById('btn-roll-dice').addEventListener('click', () => rollDiceAction());
+      document.getElementById('dice-touch-area').addEventListener('click', () => rollDiceAction());
+
+      // Restart buttons
+      document.getElementById('btn-restart').addEventListener('click', resetMatch);
+      document.getElementById('btn-play-again').addEventListener('click', resetMatch);
+
+      // Mode Selector
+      const modeSelect = document.getElementById('select-game-mode');
+      modeSelect.addEventListener('change', (e) => {
+        App.mode = e.target.value;
+        const p2Label = document.getElementById('label-p2');
+        if (App.mode === 'bot') {
+          p2Label.textContent = 'Bot (Blue)';
+          addLogMessage('System', 'Bot mode enabled. Play against the AI!');
+        } else if (App.mode === 'online') {
+          p2Label.textContent = 'Online Opponent';
+          initOnlineSync();
+          addLogMessage('System', 'Online Room sync active across browser windows!');
+        } else {
+          p2Label.textContent = 'Player 2 (Blue)';
+          addLogMessage('System', 'Pass & Play enabled on this device.');
+        }
+        resetMatch();
+      });
+
+      // Sound Toggle
+      document.getElementById('btn-toggle-sound').addEventListener('click', () => {
+        App.sound = !App.sound;
+        const icon = document.getElementById('sound-icon');
+        if (App.sound) {
+          icon.setAttribute('data-lucide', 'volume-2');
+          icon.className = 'w-4 h-4 text-amber-400';
+        } else {
+          icon.setAttribute('data-lucide', 'volume-x');
+          icon.className = 'w-4 h-4 text-rose-400';
+        }
+        if (window.lucide) lucide.createIcons();
+      });
+
+      // QR Code Modal
+      document.getElementById('btn-show-qr').addEventListener('click', showQRCode);
+      document.getElementById('btn-close-qr').addEventListener('click', () => {
+        document.getElementById('modal-qr').classList.add('hidden');
+      });
+
+      // Copy Link Button
+      document.getElementById('btn-copy-url').addEventListener('click', () => {
+        let url = window.location.origin + window.location.pathname;
+        if (!url.includes('reyansha062.github.io')) {
+          url = 'https://reyansha062.github.io/whatscame/';
+        }
+        url += `?room=${encodeURIComponent(App.room)}`;
+
+        try {
+          const el = document.createElement('textarea');
+          el.value = url;
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+          addLogMessage('System', 'Match link copied to clipboard!');
+        } catch (e) {}
+      });
+
+      // Chat Form
+      document.getElementById('chat-input-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chat-field');
+        const text = input.value.trim();
+        if (!text) return;
+        const sender = (App.currentTurn === 1) ? 'Player 1' : 'Player 2';
+        addLogMessage(sender, text);
+        if (App.mode === 'online') {
+          broadcastSync({ type: 'CHAT', sender, text });
+        }
+        input.value = '';
+      });
+
+      // Quick Reaction Buttons
+      document.querySelectorAll('.quick-taunt').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const msg = btn.getAttribute('data-msg');
+          const sender = (App.currentTurn === 1) ? 'Player 1' : 'Player 2';
+          addLogMessage(sender, msg);
+          if (App.mode === 'online') {
+            broadcastSync({ type: 'CHAT', sender, text: msg });
+          }
+        });
+      });
+
+      // Redraw SVG overlay upon screen resize
+      window.addEventListener('resize', drawDecorations);
+    });
+  </script>
 </body>
 </html>
