@@ -294,10 +294,10 @@
           <div id="dice-3d" class="dice-cube">
             <div class="dice-face face-1"><span class="pip"></span></div>
             <div class="dice-face face-2"><span class="pip"></span><span class="pip"></span></div>
-            <div class="dice-face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-            <div class="dice-face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-            <div class="dice-face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-            <div class="dice-face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+            <div class="dice-face face-3"><span class="pip"></span><span class="pip"></span></div>
+            <div class="dice-face face-4"><span class="pip"></span><span class="pip"></span></div>
+            <div class="dice-face face-5"><span class="pip"></span><span class="pip"></span></div>
+            <div class="dice-face face-6"><span class="pip"></span><span class="pip"></span></div>
           </div>
         </div>
 
@@ -1093,18 +1093,15 @@
       }
     }
 
-    // QR Code Generator
+    // Fixed QR Code Generator with Guaranteed Scannability
     function renderQRCode() {
       const target = document.getElementById('qr-render-area');
       const modal = document.getElementById('modal-qr');
       if (!target || !modal) return;
-      target.innerHTML = '';
 
-      let shareUrl = window.location.origin + window.location.pathname;
-      if (!shareUrl.includes('reyansha062.github.io')) {
-        shareUrl = 'https://reyansha062.github.io/whatscame/';
-      }
-      shareUrl += `?room=${encodeURIComponent(App.room)}`;
+      target.replaceChildren();
+
+      let shareUrl = `https://reyansha062.github.io/whatscame/?room=${encodeURIComponent(App.room)}`;
 
       try {
         if (typeof QRCode !== 'undefined') {
@@ -1112,15 +1109,16 @@
             text: shareUrl,
             width: 180,
             height: 180,
-            colorDark: '#022c22',
+            colorDark: '#000000',
             colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.M
+            correctLevel: QRCode.CorrectLevel.H
           });
         } else {
-          target.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(shareUrl)}" alt="QR Code" class="w-[180px] h-[180px]"/>`;
+          throw new Error('QRCode lib unavailable');
         }
       } catch (e) {
-        target.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(shareUrl)}" alt="QR Code" class="w-[180px] h-[180px]"/>`;
+        const encodedUrl = encodeURIComponent(shareUrl);
+        target.innerHTML = `<img src="https://quickchart.io/qr?text=${encodedUrl}&size=180&ecLevel=H&margin=1" alt="QR Code" class="w-[180px] h-[180px] object-contain rounded-lg"/>`;
       }
 
       document.getElementById('qr-display-room').textContent = App.room;
